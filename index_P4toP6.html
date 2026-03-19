@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>單字學霸學習卡 - 國中基礎單字</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .card-container { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+    <div id="app" class="flex flex-col items-center p-4 sm:p-8">
+        <!-- Header -->
+        <header class="w-full max-w-md flex justify-between items-center mb-6">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">國中基礎單字</h1>
+            </div>
+            <div class="bg-white px-4 py-1.5 rounded-full shadow-sm border border-slate-200">
+                <span id="remaining-count" class="text-xs font-bold text-indigo-600">載入中...</span>
+            </div>
+        </header>
+
+        <!-- Progress Bar -->
+        <div class="w-full max-w-md h-2 bg-slate-200 rounded-full mb-8 overflow-hidden">
+            <div id="progress-bar" class="h-full bg-indigo-500 transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <!-- Flashcard Area -->
+        <div id="card-area" class="relative w-full max-w-md perspective-1000 h-[480px]">
+            <!-- Main Card -->
+            <div id="card-inner" class="card-container relative w-full h-full preserve-3d cursor-pointer shadow-xl rounded-3xl">
+                
+                <!-- Front -->
+                <div class="absolute inset-0 backface-hidden bg-white rounded-3xl flex flex-col items-center justify-center p-8 border-2 border-slate-100">
+                    <span class="text-slate-400 text-xs font-bold tracking-widest uppercase mb-4">Word</span>
+                    <h2 id="word-front" class="text-5xl font-extrabold text-slate-800 text-center mb-6 break-all">-</h2>
+                    <button id="speak-btn-front" class="p-4 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                    </button>
+                    <p class="absolute bottom-10 text-slate-300 text-sm font-medium animate-pulse">點擊卡片查看解釋</p>
+                </div>
+
+                <!-- Back -->
+                <div class="absolute inset-0 backface-hidden bg-white rounded-3xl flex flex-col p-8 border-2 border-indigo-100 rotate-y-180 overflow-hidden">
+                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 id="word-back" class="text-3xl font-bold text-indigo-600">-</h3>
+                            <p id="translation-back" class="text-xl text-slate-700 font-medium mt-1">-</p>
+                        </div>
+                        <button id="speak-btn-back" class="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="flex-1">
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Example Sentence</span>
+                            <p id="example-back" class="text-slate-700 leading-relaxed italic text-lg">"-"</p>
+                            <button id="speak-example-btn" class="mt-3 text-xs text-indigo-500 font-bold hover:underline flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> 朗讀例句
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SRS Controls -->
+                    <div class="mt-6 pt-6 border-t border-slate-100 grid grid-cols-4 gap-2">
+                        <button onclick="handleSRS('AGAIN')" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-red-50 text-red-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            </div>
+                            <span class="text-[10px] font-bold text-red-500 uppercase">Again</span>
+                        </button>
+                        <button onclick="handleSRS('HARD')" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-orange-50 text-orange-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            </div>
+                            <span class="text-[10px] font-bold text-orange-500 uppercase">Hard</span>
+                        </button>
+                        <button onclick="handleSRS('GOOD')" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-green-50 text-green-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            </div>
+                            <span class="text-[10px] font-bold text-green-500 uppercase">Good</span>
+                        </button>
+                        <button onclick="handleSRS('EASY')" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-indigo-50 text-indigo-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            </div>
+                            <span class="text-[10px] font-bold text-indigo-500 uppercase">Easy</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="mt-8 text-slate-400 text-sm flex items-center gap-1">資料來源：國中基礎單字 4-6 頁 (B-C 部分)</p>
+
+        <!-- Completion Modal -->
+        <div id="completion-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-8 z-50">
+            <div class="bg-white p-12 rounded-3xl shadow-2xl text-center max-w-md w-full border border-slate-100">
+                <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-800 mb-2">學習完成！</h2>
+                <p class="text-slate-600 mb-8">您已經完成了本日的單字量。</p>
+                <button onclick="resetSession()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+                    再次複習
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const initialWordData = [
+            { word: "cabbage", translation: "甘藍菜、捲心菜(n)", example: "I bought a fresh cabbage to make salad." },
+            { word: "cabinet", translation: "櫥櫃、內閣(n)", example: "The medicine is kept in the bathroom cabinet." },
+            { word: "cable", translation: "電纜、有線電視(n)", example: "We just installed cable TV in our house." },
+            { word: "cafeteria", translation: "自助餐廳(n)", example: "Let's meet for lunch in the school cafeteria." },
+            { word: "cage", translation: "籠子(n)", example: "The lion escaped from its cage." },
+            { word: "cake", translation: "蛋糕(n)", example: "She baked a chocolate cake for my birthday." },
+            { word: "calendar", translation: "日曆、曆法(n)", example: "Check the calendar to see when the holiday is." },
+            { word: "call", translation: "打電話、呼叫(v/n)", example: "Give me a call when you get home." },
+            { word: "calm", translation: "冷靜的、平靜的(adj)", example: "Try to stay calm during the emergency." },
+            { word: "camera", translation: "照相機(n)", example: "Smile at the camera!" },
+            { word: "camp", translation: "營地(n) 露營(v)", example: "We decided to camp by the lake." },
+            { word: "campus", translation: "校園(n)", example: "The university campus is very beautiful." },
+            { word: "can", translation: "能、會(aux) 罐頭(n)", example: "I can speak three languages." },
+            { word: "cancel", translation: "取消(v)", example: "The flight was canceled due to the storm." },
+            { word: "cancer", translation: "癌症(n)", example: "Smoking can lead to lung cancer." },
+            { word: "candle", translation: "蠟燭(n)", example: "Blow out the candles and make a wish." },
+            { word: "candy", translation: "糖果(n)", example: "Too much candy is bad for your teeth." },
+            { word: "cap", translation: "蓋子、便帽(n)", example: "He is wearing a red baseball cap." },
+            { word: "captain", translation: "隊長、船長(n)", example: "The captain led his team to victory." },
+            { word: "car", translation: "汽車(n)", example: "My father bought a new car." },
+            { word: "card", translation: "卡片(n)", example: "I sent her a birthday card." },
+            { word: "care", translation: "照料、關心(v/n)", example: "You should take good care of yourself." },
+            { word: "careful", translation: "小心的(adj)", example: "Be careful when you cross the street." },
+            { word: "careless", translation: "粗心的(adj)", example: "It was a careless mistake." },
+            { word: "carpenter", translation: "木匠(n)", example: "The carpenter fixed the broken chair." },
+            { word: "carpet", translation: "地毯(n)", example: "The living room has a soft gray carpet." },
+            { word: "carrot", translation: "胡蘿蔔(n)", example: "Rabbits like to eat carrots." },
+            { word: "carry", translation: "攜帶、搬運(v)", example: "Can you help me carry these bags?" },
+            { word: "cartoon", translation: "卡通(n)", example: "The children are watching cartoons." },
+            { word: "case", translation: "箱子、案件、情況(n)", example: "In that case, we should leave early." },
+            { word: "cash", translation: "現金(n)", example: "Do you want to pay by cash or credit card?" },
+            { word: "cassette", translation: "卡式磁帶(n)", example: "Old cassette players are hard to find now." },
+            { word: "castle", translation: "城堡(n)", example: "The king lived in a giant stone castle." },
+            { word: "cat", translation: "貓(n)", example: "My cat likes to sleep on the sofa." },
+            { word: "catch", translation: "捉住、趕上(v)", example: "Hurry up, or we will miss the bus." },
+            { word: "cause", translation: "原因(n) 導致(v)", example: "The heavy rain caused a flood." },
+            { word: "ceiling", translation: "天花板(n)", example: "There is a spider on the ceiling." },
+            { word: "celebrate", translation: "慶祝(v)", example: "How are you going to celebrate your birthday?" },
+            { word: "cell phone", translation: "手機(n)", example: "Don't use your cell phone during class." },
+            { word: "cent", translation: "分(貨幣單位)(n)", example: "There are one hundred cents in a dollar." },
+            { word: "center", translation: "中心(n)", example: "The shop is in the center of the town." },
+            { word: "central", translation: "中央的、核心的(adj)", example: "The station is in a central location." },
+            { word: "century", translation: "世紀(n)", example: "We are living in the 21st century." },
+            { word: "certain", translation: "確定的、某個(adj)", example: "I am certain that he will come." },
+            { word: "chair", translation: "椅子(n)", example: "Please take a seat on the chair." },
+            { word: "chalk", translation: "粉筆(n)", example: "The teacher wrote on the board with chalk." },
+            { word: "chance", translation: "機會(n)", example: "This is your last chance to win." },
+            { word: "change", translation: "改變、找零(v/n)", example: "Don't forget to take your change." },
+            { word: "channel", translation: "頻道(n)", example: "Which channel is the game on?" },
+            { word: "character", translation: "角色、性格(n)", example: "He is the main character in the movie." },
+            { word: "charge", translation: "收費、充電(v/n)", example: "I need to charge my phone." },
+            { word: "chart", translation: "圖表(n)", example: "The chart shows the sales growth." },
+            { word: "chase", translation: "追逐(v/n)", example: "The dog likes to chase cats." },
+            { word: "cheap", translation: "便宜的(adj)", example: "This shirt is very cheap." },
+            { word: "cheat", translation: "欺騙、作弊(v)", example: "He was caught cheating on the exam." },
+            { word: "check", translation: "檢查、支票(v/n)", example: "Let me check the schedule." },
+            { word: "cheer", translation: "歡呼(v/n)", example: "The crowd began to cheer for the team." },
+            { word: "cheerful", translation: "開朗的、快樂的(adj)", example: "She has a cheerful personality." },
+            { word: "cheese", translation: "起司(n)", example: "I like extra cheese on my pizza." },
+            { word: "chemistry", translation: "化學(n)", example: "We have chemistry class on Mondays." },
+            { word: "chess", translation: "西洋棋(n)", example: "My grandfather taught me how to play chess." },
+            { word: "chicken", translation: "雞、雞肉(n)", example: "The fried chicken tastes delicious." },
+            { word: "chief", translation: "首領、主要的(n/adj)", example: "The police chief is investigating the case." },
+            { word: "child", translation: "小孩(n)", example: "When I was a child, I wanted to be an astronaut." },
+            { word: "childhood", translation: "童年(n)", example: "I had a happy childhood." },
+            { word: "chin", translation: "下巴(n)", example: "He rubbed his chin while thinking." },
+            { word: "chocolate", translation: "巧克力(n)", example: "Dark chocolate is my favorite." },
+            { word: "choice", translation: "選擇(n)", example: "You have no other choice." },
+            { word: "choose", translation: "選擇(v)", example: "Please choose a color you like." },
+            { word: "chopsticks", translation: "筷子(n)", example: "It's difficult for him to use chopsticks." },
+            { word: "Christmas", translation: "聖誕節(n)", example: "We decorated the Christmas tree." },
+            { word: "church", translation: "教堂(n)", example: "They go to church every Sunday." },
+            { word: "circle", translation: "圓圈(n)", example: "Draw a circle on the paper." },
+            { word: "citizen", translation: "公民、市民(n)", example: "Every citizen has the right to vote." },
+            { word: "city", translation: "城市(n)", example: "Taipei is a very busy city." },
+            { word: "clap", translation: "拍手(v/n)", example: "The audience began to clap loudly." },
+            { word: "class", translation: "班級、課程(n)", example: "I have an English class at two." },
+            { word: "classic", translation: "經典的(adj/n)", example: "This is a classic novel." },
+            { word: "classmate", translation: "同學(n)", example: "She is my favorite classmate." },
+            { word: "classroom", translation: "教室(n)", example: "The classroom is on the third floor." },
+            { word: "clean", translation: "乾淨的(adj) 清潔(v)", example: "Please keep your room clean." },
+            { word: "cleaner", translation: "清潔劑、清潔工(n)", example: "He works as a window cleaner." },
+            { word: "clear", translation: "清楚的(adj)", example: "The instructions are very clear." },
+            { word: "clerk", translation: "店員、辦事員(n)", example: "The sales clerk was very helpful." },
+            { word: "clever", translation: "聰明的(adj)", example: "What a clever idea!" },
+            { word: "climate", translation: "氣候(n)", example: "The climate here is very hot and humid." },
+            { word: "climb", translation: "攀爬(v)", example: "They want to climb the mountain tomorrow." },
+            { word: "clock", translation: "時鐘(n)", example: "The clock on the wall is slow." },
+            { word: "close", translation: "關閉(v) 靠近的(adj)", example: "Please close the door behind you." },
+            { word: "closet", translation: "壁櫥、衣櫥(n)", example: "Put your clothes in the closet." },
+            { word: "clothes", translation: "衣服(n)", example: "I need to wash my dirty clothes." },
+            { word: "cloud", translation: "雲(n)", example: "The sun disappeared behind a cloud." },
+            { word: "cloudy", translation: "多雲的(adj)", example: "It is a cloudy day today." },
+            { word: "club", translation: "俱樂部、社團(n)", example: "I joined the tennis club." },
+            { word: "coach", translation: "教練(n)", example: "The coach is training the players." },
+            { word: "coast", translation: "海岸(n)", example: "They live in a town on the coast." },
+            { word: "coat", translation: "外套、大衣(n)", example: "Put on your coat; it's cold outside." },
+            { word: "cockroach", translation: "蟑螂(n)", example: "She is very afraid of cockroaches." },
+            { word: "coffee", translation: "咖啡(n)", example: "I drink a cup of coffee every morning." },
+            { word: "coin", translation: "硬幣(n)", example: "I found a gold coin on the ground." }
+        ];
+
+        let queue = [...initialWordData];
+        let learnedCount = 0;
+        let sessionTotal = initialWordData.length;
+        let isFlipped = false;
+
+        // DOM Elements
+        const cardInner = document.getElementById('card-inner');
+        const wordFront = document.getElementById('word-front');
+        const wordBack = document.getElementById('word-back');
+        const translationBack = document.getElementById('translation-back');
+        const exampleBack = document.getElementById('example-back');
+        const remainingCountText = document.getElementById('remaining-count');
+        const progressBar = document.getElementById('progress-bar');
+        const speakBtnFront = document.getElementById('speak-btn-front');
+        const speakBtnBack = document.getElementById('speak-btn-back');
+        const speakExampleBtn = document.getElementById('speak-example-btn');
+        const modal = document.getElementById('completion-modal');
+
+        function updateUI() {
+            if (queue.length === 0) {
+                modal.classList.remove('hidden');
+                return;
+            }
+
+            const current = queue[0];
+            wordFront.innerText = current.word;
+            wordBack.innerText = current.word;
+            translationBack.innerText = current.translation;
+            exampleBack.innerText = current.example;
+            
+            remainingCountText.innerText = `剩餘 ${queue.length} 個`;
+            const progress = (learnedCount / sessionTotal) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function toggleFlip() {
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                cardInner.classList.add('rotate-y-180');
+            } else {
+                cardInner.classList.remove('rotate-y-180');
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function handleSRS(type) {
+            if (queue.length === 0) return;
+            
+            const current = queue.shift();
+            
+            // Flip back first
+            if (isFlipped) toggleFlip();
+
+            // Delay a bit for animation smoothness
+            setTimeout(() => {
+                switch(type) {
+                    case 'AGAIN':
+                        queue.splice(Math.min(2, queue.length), 0, current);
+                        break;
+                    case 'HARD':
+                        queue.splice(Math.floor(queue.length / 2), 0, current);
+                        break;
+                    case 'GOOD':
+                        queue.push(current);
+                        break;
+                    case 'EASY':
+                        learnedCount++;
+                        break;
+                }
+                updateUI();
+            }, 150);
+        }
+
+        function resetSession() {
+            queue = [...initialWordData];
+            learnedCount = 0;
+            isFlipped = false;
+            modal.classList.add('hidden');
+            cardInner.classList.remove('rotate-y-180');
+            updateUI();
+        }
+
+        // Event Listeners
+        cardInner.addEventListener('click', toggleFlip);
+        
+        speakBtnFront.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speak(queue[0].word);
+        });
+
+        speakBtnBack.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speak(queue[0].word);
+        });
+
+        speakExampleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            speak(queue[0].example);
+        });
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
