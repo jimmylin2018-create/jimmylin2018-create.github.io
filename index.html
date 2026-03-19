@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>單字學霸學習卡</title>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 Lucide 圖示庫 -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* 3D 翻轉卡片所需的自訂 CSS */
+        .perspective-1000 { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 flex flex-col items-center p-4 sm:p-8 font-sans transition-all duration-300">
+
+    <!-- 學習卡片主畫面 -->
+    <div id="app-view" class="w-full max-w-md w-full flex flex-col mt-4 sm:mt-8">
+        <header class="w-full flex justify-between items-center mb-6">
+            <div class="flex items-center gap-2">
+                <i data-lucide="book-open" class="text-indigo-600 w-7 h-7"></i>
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">SRS 單字複習</h1>
+            </div>
+            <div class="bg-white px-4 py-1.5 rounded-full shadow-sm border border-slate-200">
+                <span id="queue-count" class="text-xs font-bold text-indigo-600">0 張待複習</span>
+            </div>
+        </header>
+
+        <div class="w-full h-2 bg-slate-200 rounded-full mb-8 overflow-hidden">
+            <div id="progress-bar" class="h-full bg-indigo-500 transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <div class="relative w-full perspective-1000 h-[480px]">
+            <div id="flashcard" class="relative w-full h-full transition-all duration-500 preserve-3d cursor-pointer shadow-xl rounded-3xl">
+                
+                <!-- 卡片正面 -->
+                <div class="absolute inset-0 backface-hidden bg-white rounded-3xl flex flex-col items-center justify-center p-8 border-2 border-slate-100">
+                    <span class="text-slate-400 text-xs font-bold tracking-widest uppercase mb-4">Front</span>
+                    <h2 id="front-word" class="text-5xl font-extrabold text-slate-800 text-center mb-6 break-all">word</h2>
+                    <button id="btn-speak-front" class="p-4 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-colors z-10 relative">
+                        <i data-lucide="volume-2" class="w-8 h-8"></i>
+                    </button>
+                    <p class="absolute bottom-10 text-slate-300 text-sm font-medium animate-pulse">點擊卡片查看背面</p>
+                </div>
+
+                <!-- 卡片背面 -->
+                <div class="absolute inset-0 backface-hidden bg-white rounded-3xl flex flex-col p-8 border-2 border-indigo-100 rotate-y-180 overflow-hidden">
+                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 id="back-word" class="text-3xl font-bold text-indigo-600">word</h3>
+                            <p id="back-translation" class="text-xl text-slate-700 font-medium mt-1">translation</p>
+                        </div>
+                        <button id="btn-speak-back" class="p-2 text-slate-400 hover:text-indigo-600 transition-colors z-10 relative">
+                            <i data-lucide="volume-2" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Example Sentence</span>
+                            <p id="back-example" class="text-slate-700 leading-relaxed italic text-lg">"example"</p>
+                            <button id="btn-speak-example" class="mt-3 text-xs text-indigo-500 font-bold hover:underline flex items-center gap-1 z-10 relative">
+                                <i data-lucide="volume-2" class="w-3.5 h-3.5"></i> 朗讀例句
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- SRS 按鈕區塊 -->
+                    <div class="mt-6 pt-6 border-t border-slate-100 grid grid-cols-4 gap-2 z-10 relative">
+                        <button id="btn-again" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-red-50 text-red-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all shadow-sm">
+                                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-[10px] font-bold text-red-500 uppercase">Again</span>
+                        </button>
+                        <button id="btn-hard" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-orange-50 text-orange-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all shadow-sm">
+                                <i data-lucide="help-circle" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-[10px] font-bold text-orange-500 uppercase">Hard</span>
+                        </button>
+                        <button id="btn-good" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-green-50 text-green-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-all shadow-sm">
+                                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-[10px] font-bold text-green-500 uppercase">Good</span>
+                        </button>
+                        <button id="btn-easy" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-indigo-50 text-indigo-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-all shadow-sm">
+                                <i data-lucide="star" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-[10px] font-bold text-indigo-500 uppercase">Easy</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <p class="mt-8 text-slate-400 text-sm flex items-center justify-center gap-1">
+            <i data-lucide="refresh-ccw" class="w-3.5 h-3.5"></i> 依據你的記憶程度調整複習頻率
+        </p>
+    </div>
+
+    <!-- 複習完成畫面 -->
+    <div id="completion-view" class="hidden bg-white p-12 rounded-3xl shadow-xl text-center max-w-md w-full border border-slate-100">
+        <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i data-lucide="check-circle-2" class="w-12 h-12"></i>
+        </div>
+        <h2 class="text-3xl font-bold text-slate-800 mb-2">太棒了！</h2>
+        <p class="text-slate-600 mb-8">你已經完成了本次複習共 <span id="completion-total">0</span> 個單字。</p>
+        <button id="btn-reset" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+            <i data-lucide="refresh-ccw" class="w-5 h-5"></i> 再次複習
+        </button>
+    </div>
+
+    <!-- 應用程式邏輯 -->
+    <script>
+        const initialWordData = [
+            { word: "ability", translation: "能力、才幹(n)", example: "He has the ability to complete the task." },
+            { word: "abroad", translation: "國外、海外(adv)", example: "My sister is studying abroad in Japan." },
+            { word: "absent", translation: "缺席的(adj)", example: "Why were you absent from school yesterday?" },
+            { word: "accept", translation: "接受、認可(vt)", example: "I am happy to accept your invitation." },
+            { word: "accident", translation: "意外的事、事故(n)", example: "Drive carefully to avoid an accident." },
+            { word: "achieve", translation: "完成、實現(vt)", example: "You can achieve anything if you work hard." },
+            { word: "active", translation: "活躍的、積極的(adj)", example: "He is very active in sports." },
+            { word: "activity", translation: "活動(n)", example: "What is your favorite outdoor activity?" },
+            { word: "actor", translation: "男演員(n)", example: "The lead actor performed brilliantly." },
+            { word: "add", translation: "增加、添加(v)", example: "Please add some sugar to my coffee." },
+            { word: "address", translation: "地址(n)", example: "Please write down your home address." },
+            { word: "admire", translation: "欽佩、欣賞(v)", example: "I really admire your courage." },
+            { word: "adult", translation: "成年人(n)", example: "Tickets are cheaper for children than for adults." },
+            { word: "advice", translation: "建議、忠告(n)", example: "Can you give me some advice on learning English?" },
+            { word: "afraid", translation: "害怕的(adj)", example: "Don't be afraid of making mistakes." },
+            { word: "afternoon", translation: "下午(n)", example: "I usually play basketball in the afternoon." },
+            { word: "against", translation: "反對、對抗(prep)", example: "Our team is playing against theirs tomorrow." },
+            { word: "agree", translation: "同意(v)", example: "I totally agree with your plan." },
+            { word: "airline", translation: "航空公司(n)", example: "Which airline are you flying with?" },
+            { word: "airport", translation: "機場(n)", example: "We arrived at the airport two hours early." },
+            { word: "album", translation: "相簿、專輯(n)", example: "I like the songs in his new album." },
+            { word: "alive", translation: "活著的(adj)", example: "The doctors kept the patient alive." },
+            { word: "allow", translation: "允許(v)", example: "My parents don't allow me to go out late." },
+            { word: "almost", translation: "幾乎(adv)", example: "Dinner is almost ready." },
+            { word: "alone", translation: "獨自的(adj/adv)", example: "She enjoys being alone sometimes." },
+            { word: "along", translation: "沿著(prep)", example: "We walked along the river bank." },
+            { word: "already", translation: "已經(adv)", example: "I have already finished my homework." },
+            { word: "always", translation: "總是(adv)", example: "She always brings an umbrella with her." },
+            { word: "amazing", translation: "令人驚訝的(adj)", example: "The view from the mountain is amazing." },
+            { word: "ambulance", translation: "救護車(n)", example: "The ambulance arrived within minutes." },
+            { word: "america", translation: "美國(n)", example: "He plans to visit America next summer." },
+            { word: "ancient", translation: "古代的(adj)", example: "We visited an ancient castle in Italy." },
+            { word: "angel", translation: "天使(n)", example: "She sang like an angel." },
+            { word: "angry", translation: "生氣的(adj)", example: "My father was angry with me for being late." },
+            { word: "animal", translation: "動物(n)", example: "The lion is the king of animals." },
+            { word: "another", translation: "另一個(adj/pron)", example: "Would you like another cup of tea?" },
+            { word: "answer", translation: "回答(v/n)", example: "He couldn't answer the difficult question." },
+            { word: "anyway", translation: "無論如何(adv)", example: "It was raining, but we went out anyway." },
+            { word: "apartment", translation: "公寓(n)", example: "They live in a small apartment downtown." },
+            { word: "appear", translation: "出現(v)", example: "A rainbow appeared after the rain." },
+            { word: "apple", translation: "蘋果(n)", example: "An apple a day keeps the doctor away." },
+            { word: "apply", translation: "申請(v)", example: "I want to apply for a part-time job." },
+            { word: "appreciate", translation: "感激(v)", example: "I really appreciate your help." },
+            { word: "area", translation: "區域、面積(n)", example: "This area is famous for its tea." },
+            { word: "argue", translation: "爭論(v)", example: "Don't argue with your parents." },
+            { word: "arm", translation: "手臂(n)", example: "He broke his arm during the game." },
+            { word: "army", translation: "軍隊(n)", example: "He joined the army after graduation." },
+            { word: "around", translation: "大約、周圍(prep/adv)", example: "The earth moves around the sun." },
+            { word: "arrive", translation: "抵達(v)", example: "The train will arrive at ten o'clock." },
+            { word: "artist", translation: "藝術家(n)", example: "Picasso was a great artist." },
+            { word: "as", translation: "如同、當作(prep/conj)", example: "He works as a doctor in a hospital." },
+            { word: "ask", translation: "詢問、要求(v)", example: "If you have questions, just ask me." },
+            { word: "asleep", translation: "睡著的(adj)", example: "The baby is fast asleep." },
+            { word: "assistant", translation: "助手、助理(n)", example: "The shop assistant was very helpful." },
+            { word: "assume", translation: "假定、設想(v)", example: "I assume you are tired after the trip." },
+            { word: "attack", translation: "攻擊(v/n)", example: "The dog tried to attack the stranger." },
+            { word: "attention", translation: "注意力(n)", example: "Please pay attention to the teacher." },
+            { word: "available", translation: "可得到的、有空的(adj)", example: "Is this seat available?" },
+            { word: "avoid", translation: "避免(v)", example: "We should avoid making the same mistake." },
+            { word: "away", translation: "離開(adv)", example: "Stay away from the fire." },
+            { word: "baby", translation: "嬰兒(n)", example: "The baby is crying for milk." },
+            { word: "back", translation: "後面的(adj) 背部(n)", example: "He carries a heavy bag on his back." },
+            { word: "bad", translation: "壞的(adj)", example: "Eating too much candy is bad for your teeth." },
+            { word: "bag", translation: "袋子(n)", example: "Put your books in your school bag." },
+            { word: "bake", translation: "烘烤(v)", example: "I love to bake cookies for my friends." },
+            { word: "balance", translation: "平衡(n/v)", example: "It's hard to keep your balance on ice." },
+            { word: "ball", translation: "球(n)", example: "The boys are playing with a ball." },
+            { word: "balloon", translation: "氣球(n)", example: "The child let go of the balloon." },
+            { word: "banana", translation: "香蕉(n)", example: "Monkeys love eating bananas." },
+            { word: "band", translation: "樂隊(n)", example: "My brother plays guitar in a band." },
+            { word: "bank", translation: "銀行、河岸(n)", example: "I need to go to the bank to get some money." },
+            { word: "bar", translation: "棒、酒吧(n)", example: "He ate a bar of chocolate." },
+            { word: "base", translation: "基礎、基地(n)", example: "This movie is based on a true story." },
+            { word: "basic", translation: "基本的(adj)", example: "Food and water are basic needs." },
+            { word: "basket", translation: "籃子(n)", example: "Put the fruit into the basket." },
+            { word: "beach", translation: "海灘(n)", example: "We went to the beach last weekend." },
+            { word: "bean", translation: "豆子(n)", example: "I like to eat green beans." },
+            { word: "bear", translation: "熊(n) 忍受(v)", example: "I can't bear the noise anymore." },
+            { word: "beat", translation: "打敗、跳動(v)", example: "Our team beat them by two points." },
+            { word: "beautiful", translation: "美麗的(adj)", example: "She is wearing a beautiful dress." },
+            { word: "become", translation: "變成(v)", example: "He wants to become a pilot." },
+            { word: "bed", translation: "床(n)", example: "Go to bed early tonight." },
+            { word: "bee", translation: "蜜蜂(n)", example: "A bee is busy collecting honey." },
+            { word: "beef", translation: "牛肉(n)", example: "Would you like beef or chicken?" },
+            { word: "before", translation: "在...之前(prep/conj)", example: "Wash your hands before dinner." },
+            { word: "begin", translation: "開始(v)", example: "The class will begin at eight." },
+            { word: "behind", translation: "在...後面(prep)", example: "The cat is hiding behind the door." },
+            { word: "believe", translation: "相信(v)", example: "I believe you can do it." },
+            { word: "bell", translation: "鈴聲、鐘(n)", example: "The school bell is ringing." },
+            { word: "belong", translation: "屬於(v)", example: "This book belongs to me." },
+            { word: "below", translation: "在...下方(prep)", example: "Write your name below the line." },
+            { word: "beside", translation: "在...旁邊(prep)", example: "Come and sit beside me." },
+            { word: "best", translation: "最好的(adj)", example: "He is my best friend." },
+            { word: "better", translation: "較好的(adj)", example: "I feel much better now." },
+            { word: "between", translation: "在...之間(prep)", example: "The shop is between the bank and the park." },
+            { word: "bicycle", translation: "自行車(n)", example: "He goes to work by bicycle." },
+            { word: "big", translation: "大的(adj)", example: "They live in a big house." },
+            { word: "bill", translation: "帳單、鈔票(n)", example: "Can I have the bill, please?" },
+            { word: "bird", translation: "鳥(n)", example: "Birds are singing in the tree." },
+            { word: "birth", translation: "出生(n)", example: "What is your date of birth?" },
+            { word: "birthday", translation: "生日(n)", example: "Happy birthday to you!" },
+            { word: "bite", translation: "咬(v)", example: "Be careful! That dog might bite." },
+            { word: "black", translation: "黑色的(adj)", example: "He is wearing a black coat." },
+            { word: "blanket", translation: "毯子(n)", example: "It's cold, please use a blanket." }
+        ];
+
+        let queue = [...initialWordData];
+        let isFlipped = false;
+        let learnedCount = 0;
+        const sessionTotal = initialWordData.length;
+
+        // DOM 元素選取
+        const appView = document.getElementById('app-view');
+        const completionView = document.getElementById('completion-view');
+        const queueCountEl = document.getElementById('queue-count');
+        const progressBar = document.getElementById('progress-bar');
+        const flashcard = document.getElementById('flashcard');
+        const body = document.body;
+
+        const frontWordEl = document.getElementById('front-word');
+        const backWordEl = document.getElementById('back-word');
+        const backTranslationEl = document.getElementById('back-translation');
+        const backExampleEl = document.getElementById('back-example');
+        const completionTotalEl = document.getElementById('completion-total');
+
+        // 初始化圖示
+        lucide.createIcons();
+
+        // 核心渲染邏輯
+        function render() {
+            if (queue.length === 0) {
+                // 完成畫面
+                appView.classList.add('hidden');
+                appView.classList.remove('flex');
+                completionView.classList.remove('hidden');
+                body.classList.add('justify-center');
+                completionTotalEl.innerText = sessionTotal;
+                return;
+            } else {
+                // 學習畫面
+                appView.classList.remove('hidden');
+                appView.classList.add('flex');
+                completionView.classList.add('hidden');
+                body.classList.remove('justify-center');
+            }
+
+            const currentItem = queue[0];
+            
+            // 更新文字內容
+            frontWordEl.innerText = currentItem.word;
+            backWordEl.innerText = currentItem.word;
+            backTranslationEl.innerText = currentItem.translation;
+            backExampleEl.innerText = `"${currentItem.example}"`;
+
+            // 更新狀態顯示
+            queueCountEl.innerText = `${queue.length} 張待複習`;
+            progressBar.style.width = `${(learnedCount / sessionTotal) * 100}%`;
+
+            // 處理翻轉狀態
+            if (isFlipped) {
+                flashcard.classList.add('rotate-y-180');
+            } else {
+                flashcard.classList.remove('rotate-y-180');
+            }
+        }
+
+        // 發音功能
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 處理 SRS 記憶邏輯
+        function handleSRS(type) {
+            if (queue.length === 0) return;
+            const current = queue.shift(); // 取出目前單字
+            isFlipped = false;
+            render(); // 先翻回正面
+
+            // 稍微延遲讓卡片翻轉動畫流暢
+            setTimeout(() => {
+                switch (type) {
+                    case 'AGAIN':
+                        // 插入到稍後再次出現 (位置 2)
+                        queue.splice(2, 0, current);
+                        break;
+                    case 'HARD':
+                        // 插入到中間
+                        const mid = Math.floor(queue.length / 2);
+                        queue.splice(mid, 0, current);
+                        break;
+                    case 'GOOD':
+                        // 放到最後面
+                        queue.push(current);
+                        break;
+                    case 'EASY':
+                        // 移除隊列，視為已學會
+                        learnedCount++;
+                        break;
+                }
+                render();
+            }, 150);
+        }
+
+        // 事件監聽：翻轉卡片
+        flashcard.addEventListener('click', () => {
+            if (queue.length > 0) {
+                isFlipped = !isFlipped;
+                render();
+            }
+        });
+
+        // 事件監聽：發音按鈕 (阻止事件冒泡，以免觸發翻轉)
+        document.getElementById('btn-speak-front').addEventListener('click', (e) => {
+            e.stopPropagation();
+            speak(queue[0].word);
+        });
+
+        document.getElementById('btn-speak-back').addEventListener('click', (e) => {
+            e.stopPropagation();
+            speak(queue[0].word);
+        });
+
+        document.getElementById('btn-speak-example').addEventListener('click', (e) => {
+            e.stopPropagation();
+            speak(queue[0].example);
+        });
+
+        // 事件監聽：SRS 按鈕 (阻止事件冒泡，以免觸發翻轉)
+        document.getElementById('btn-again').addEventListener('click', (e) => { e.stopPropagation(); handleSRS('AGAIN'); });
+        document.getElementById('btn-hard').addEventListener('click', (e) => { e.stopPropagation(); handleSRS('HARD'); });
+        document.getElementById('btn-good').addEventListener('click', (e) => { e.stopPropagation(); handleSRS('GOOD'); });
+        document.getElementById('btn-easy').addEventListener('click', (e) => { e.stopPropagation(); handleSRS('EASY'); });
+
+        // 事件監聽：重新開始
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            queue = [...initialWordData];
+            learnedCount = 0;
+            isFlipped = false;
+            render();
+        });
+
+        // 初始化第一次渲染
+        render();
+
+    </script>
+</body>
+</html>
