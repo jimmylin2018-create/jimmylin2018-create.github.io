@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>單字學霸學習卡 - 第10至12頁</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .card-container { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+    <div id="app" class="flex flex-col items-center p-4 sm:p-8">
+        <!-- Header -->
+        <header class="w-full max-w-md flex justify-between items-center mb-6">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">國中基礎單字 (10-12)</h1>
+            </div>
+            <div class="bg-white px-4 py-1.5 rounded-full shadow-sm border border-slate-200">
+                <span id="remaining-count" class="text-xs font-bold text-indigo-600">載入中...</span>
+            </div>
+        </header>
+
+        <!-- Progress Bar -->
+        <div class="w-full max-w-md h-2 bg-slate-200 rounded-full mb-8 overflow-hidden">
+            <div id="progress-bar" class="h-full bg-indigo-500 transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <!-- Flashcard Area -->
+        <div id="card-area" class="relative w-full max-w-md perspective-1000 h-[480px]">
+            <div id="card-inner" class="card-container relative w-full h-full preserve-3d cursor-pointer shadow-xl rounded-3xl">
+                <!-- Front (單字面) -->
+                <div class="absolute inset-0 backface-hidden bg-white rounded-3xl flex flex-col items-center justify-center p-8 border-2 border-slate-100">
+                    <span class="text-slate-400 text-xs font-bold tracking-widest uppercase mb-4">Word</span>
+                    <h2 id="word-front" class="text-5xl font-extrabold text-slate-800 text-center mb-6 break-all">-</h2>
+                    <button id="speak-btn-front" class="p-4 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                    </button>
+                    <p class="absolute bottom-10 text-slate-300 text-sm font-medium animate-pulse">點擊卡片查看解釋</p>
+                </div>
+
+                <!-- Back (解釋面) -->
+                <div class="absolute inset-0 backface-hidden bg-white rounded-3xl flex flex-col p-8 border-2 border-indigo-100 rotate-y-180 overflow-hidden">
+                    <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 id="word-back" class="text-3xl font-bold text-indigo-600">-</h3>
+                            <p id="translation-back" class="text-xl text-slate-700 font-medium mt-1">-</p>
+                        </div>
+                        <button id="speak-btn-back" class="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto pr-2">
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Example Sentence</span>
+                            <p id="example-back" class="text-slate-700 leading-relaxed italic text-lg">"-"</p>
+                            <button id="speak-example-btn" class="mt-3 text-xs text-indigo-500 font-bold hover:underline flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> 朗讀例句
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SRS 控制按鈕 -->
+                    <div class="mt-6 pt-6 border-t border-slate-100 grid grid-cols-4 gap-2">
+                        <button onclick="handleSRS('AGAIN')" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-red-50 text-red-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+                            <span class="text-[10px] font-bold text-red-500 uppercase">Again</span>
+                        </button>
+                        <button onclick="handleSRS('HARD')" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-orange-50 text-orange-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                            <span class="text-[10px] font-bold text-orange-500 uppercase">Hard</span>
+                        </button>
+                        <button onclick="handleSRS('GOOD')" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-green-50 text-green-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                            <span class="text-[10px] font-bold text-green-500 uppercase">Good</span>
+                        </button>
+                        <button onclick="handleSRS('EASY')" class="flex flex-col items-center gap-1 group">
+                            <div class="w-full bg-indigo-50 text-indigo-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+                            <span class="text-[10px] font-bold text-indigo-500 uppercase">Easy</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="mt-8 text-slate-400 text-sm">單字範圍：dishes ~ expensive (第 10-12 頁)</p>
+
+        <!-- Completion Modal -->
+        <div id="completion-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-8 z-50">
+            <div class="bg-white p-12 rounded-3xl shadow-2xl text-center max-w-md w-full border border-slate-100">
+                <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-800 mb-2">學習完成！</h2>
+                <p class="text-slate-600 mb-8">您已經完成了第 10-12 頁的單字內容。</p>
+                <button onclick="resetSession()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+                    再次複習
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 資料集 (第 10 頁到第 12 頁) - 約 100~120 個單字
+        const wordData = [
+            { word: "dishes", translation: "盤子、餐具(n)", example: "Who is going to do the dishes tonight?" },
+            { word: "disk", translation: "磁碟(n)", example: "The data is stored on a disk." },
+            { word: "display", translation: "陳列、展覽(v/n)", example: "The toys are on display in the window." },
+            { word: "distance", translation: "距離(n)", example: "What is the distance between Taipei and Tainan?" },
+            { word: "distant", translation: "遙遠的(adj)", example: "The stars are distant from the earth." },
+            { word: "divide", translation: "分開、除(v)", example: "Divide the cake into four pieces." },
+            { word: "do", translation: "做、行(v)", example: "What do you do for a living?" },
+            { word: "doctor", translation: "醫生、博士(n)", example: "He went to see a doctor." },
+            { word: "dog", translation: "狗(n)", example: "The dog is barking at the stranger." },
+            { word: "doll", translation: "玩偶、洋娃娃(n)", example: "The little girl is playing with her doll." },
+            { word: "dollar", translation: "美金、元(n)", example: "The ticket costs ten dollars." },
+            { word: "dolphin", translation: "海豚(n)", example: "Dolphins are very intelligent animals." },
+            { word: "donkey", translation: "驢子(n)", example: "The donkey is carrying a heavy load." },
+            { word: "door", translation: "門(n)", example: "Please close the door behind you." },
+            { word: "dot", translation: "點、小圓點(n)", example: "There is a red dot on the map." },
+            { word: "double", translation: "兩倍的(adj) 兩倍(n)", example: "He ordered a double espresso." },
+            { word: "doubt", translation: "懷疑(v/n)", example: "I doubt if he can finish the work on time." },
+            { word: "doughnut", translation: "甜甜圈(n)", example: "I had a chocolate doughnut for a snack." },
+            { word: "down", translation: "向下(adv/prep)", example: "Sit down, please." },
+            { word: "downstairs", translation: "在樓下(adv)", example: "My parents are waiting downstairs." },
+            { word: "dozen", translation: "一打、十二個(n)", example: "I bought a dozen eggs." },
+            { word: "dragon", translation: "龍(n)", example: "The story is about a brave knight and a dragon." },
+            { word: "drama", translation: "戲劇(n)", example: "We are studying modern drama." },
+            { word: "draw", translation: "畫、拉(v)", example: "She likes to draw pictures of cats." },
+            { word: "drawer", translation: "抽屜(n)", example: "My keys are in the top drawer." },
+            { word: "drawing", translation: "圖畫(n)", example: "He showed me his latest drawing." },
+            { word: "dream", translation: "夢、夢想(n/v)", example: "Follow your dreams." },
+            { word: "dress", translation: "連身裙(n) 穿衣(v)", example: "She is wearing a beautiful dress." },
+            { word: "dresser", translation: "衣櫃、梳妝台(n)", example: "Put your socks in the dresser." },
+            { word: "drink", translation: "喝(v) 飲料(n)", example: "Would you like something to drink?" },
+            { word: "drive", translation: "開車(v)", example: "Can you drive a car?" },
+            { word: "driver", translation: "司機、駕駛員(n)", example: "The bus driver was very helpful." },
+            { word: "drop", translation: "落下、滴(v/n)", example: "Be careful not to drop the vase." },
+            { word: "drug", translation: "藥品、毒品(n)", example: "The doctor prescribed a new drug." },
+            { word: "drugstore", translation: "藥房(n)", example: "You can buy medicine at the drugstore." },
+            { word: "drum", translation: "鼓(n)", example: "He plays the drums in a band." },
+            { word: "dry", translation: "乾的(adj) 弄乾(v)", example: "Is your hair dry yet?" },
+            { word: "dryer", translation: "烘乾機(n)", example: "Put the wet clothes in the dryer." },
+            { word: "duck", translation: "鴨子(n)", example: "The ducks are swimming in the pond." },
+            { word: "dumb", translation: "啞的、笨的(adj)", example: "That was a dumb thing to say." },
+            { word: "dumpling", translation: "餃子(n)", example: "I like pork dumplings." },
+            { word: "during", translation: "在...期間(prep)", example: "It rained during the night." },
+            { word: "dust", translation: "灰塵(n) 拂去灰塵(v)", example: "There is a lot of dust on the table." },
+            { word: "duty", translation: "責任、稅(n)", example: "It is your duty to tell the truth." },
+            { word: "each", translation: "每個(adj/pron)", example: "Each student has a desk." },
+            { word: "eagle", translation: "鷹(n)", example: "An eagle is flying high in the sky." },
+            { word: "ear", translation: "耳朵(n)", example: "Lend an ear to my story." },
+            { word: "early", translation: "早的(adj/adv)", example: "I wake up early every morning." },
+            { word: "earn", translation: "賺取(v)", example: "How much does he earn a month?" },
+            { word: "earth", translation: "地球、泥土(n)", example: "The moon goes around the earth." },
+            { word: "earthquake", translation: "地震(n)", example: "There was a small earthquake yesterday." },
+            { word: "ease", translation: "輕鬆、舒適(n) 減輕(v)", example: "She finished the task with ease." },
+            { word: "east", translation: "東方(n) 向東的(adj)", example: "The sun rises in the east." },
+            { word: "Easter", translation: "復活節(n)", example: "We paint eggs at Easter." },
+            { word: "easy", translation: "容易的(adj)", example: "The test was very easy." },
+            { word: "eat", translation: "吃(v)", example: "What did you eat for dinner?" },
+            { word: "edge", translation: "邊緣(n)", example: "Don't stand near the edge of the cliff." },
+            { word: "education", translation: "教育(n)", example: "Education is very important." },
+            { word: "effect", translation: "影響、效果(n)", example: "The medicine had a good effect." },
+            { word: "effective", translation: "有效的(adj)", example: "Is this an effective way to learn?" },
+            { word: "effort", translation: "努力(n)", example: "Please make an effort to be on time." },
+            { word: "egg", translation: "蛋(n)", example: "I'll have two boiled eggs." },
+            { word: "eight", translation: "八(n/adj)", example: "There are eight people in the meeting." },
+            { word: "eighteen", translation: "十八(n/adj)", example: "He is eighteen years old." },
+            { word: "eighty", translation: "八十(n/adj)", example: "My grandfather is eighty years old." },
+            { word: "either", translation: "任一、也(不)(adj/adv/pron)", example: "I don't like either of them." },
+            { word: "elder", translation: "較年長的(adj) 長者(n)", example: "My elder brother is a teacher." },
+            { word: "elect", translation: "選舉(v)", example: "They elected him as their leader." },
+            { word: "election", translation: "選舉(n)", example: "The presidential election is coming." },
+            { word: "electric", translation: "電的(adj)", example: "We have an electric guitar." },
+            { word: "element", translation: "元素、要素(n)", example: "Honesty is an important element of character." },
+            { word: "elephant", translation: "大象(n)", example: "The elephant has a long trunk." },
+            { word: "eleven", translation: "十一(n/adj)", example: "He is number eleven on the team." },
+            { word: "else", translation: "其他(adv)", example: "What else do you want to know?" },
+            { word: "e-mail", translation: "電子郵件(n/v)", example: "Send me an e-mail tomorrow." },
+            { word: "embarrass", translation: "使難堪、尷尬(v)", example: "I didn't mean to embarrass you." },
+            { word: "emotion", translation: "情緒(n)", example: "Fear is a powerful emotion." },
+            { word: "emphasize", translation: "強調(v)", example: "The teacher emphasized the importance of safety." },
+            { word: "employ", translation: "僱用(v)", example: "The company employs 500 people." },
+            { word: "empty", translation: "空的(adj) 倒空(v)", example: "The glass is empty." },
+            { word: "end", translation: "結束(v/n)", example: "The movie has a happy end." },
+            { word: "enemy", translation: "敵人(n)", example: "He is his own worst enemy." },
+            { word: "energy", translation: "能量、精力(n)", example: "Children have so much energy." },
+            { word: "engine", translation: "引擎(n)", example: "The car engine started making a strange noise." },
+            { word: "engineer", translation: "工程師(n)", example: "My father is a civil engineer." },
+            { word: "England", translation: "英國、英格蘭(n)", example: "London is the capital of England." },
+            { word: "English", translation: "英文、英國人(n) 英文的(adj)", example: "Can you speak English?" },
+            { word: "enjoy", translation: "享受、喜歡(v)", example: "I enjoy listening to music." },
+            { word: "enough", translation: "足夠的(adj/adv)", example: "I have had enough to eat." },
+            { word: "enter", translation: "進入(v)", example: "Please enter your password." },
+            { word: "entrance", translation: "入口(n)", example: "The entrance to the museum is free." },
+            { word: "environment", translation: "環境(n)", example: "We must protect the environment." },
+            { word: "envy", translation: "羨慕、忌妒(v/n)", example: "I envy your good luck." },
+            { word: "equal", translation: "相等的(adj) 等於(v)", example: "One plus one equals two." },
+            { word: "eraser", translation: "橡皮擦(n)", example: "Can I use your eraser?" },
+            { word: "error", translation: "錯誤(n)", example: "The computer found an error." },
+            { word: "escape", translation: "逃脫(v/n)", example: "The prisoner escaped from jail." },
+            { word: "especially", translation: "特別地、尤其是(adv)", example: "I love fruit, especially apples." },
+            { word: "essay", translation: "短文、散文、文章(n)", example: "He wrote an essay on global warming." },
+            { word: "Europe", translation: "歐洲(n)", example: "He traveled all over Europe last year." },
+            { word: "even", translation: "甚至、平均的(adv/adj)", example: "He didn't even say goodbye." },
+            { word: "evening", translation: "傍晚、晚上(n)", example: "What are you doing this evening?" },
+            { word: "event", translation: "事件、比賽項目(n)", example: "The 100-meter dash is a popular event." },
+            { word: "ever", translation: "曾經(adv)", example: "Have you ever been to Paris?" },
+            { word: "every", translation: "每個(adj)", example: "Every child needs love." },
+            { word: "everyone", translation: "每個人(pron)", example: "Everyone is here now." },
+            { word: "everything", translation: "每件事(pron)", example: "Everything is ready." },
+            { word: "everywhere", translation: "到處(adv)", example: "I looked everywhere for my keys." },
+            { word: "evil", translation: "邪惡的(adj) 邪惡(n)", example: "The story is about the struggle between good and evil." },
+            { word: "exact", translation: "確切的(adj)", example: "What is the exact time?" },
+            { word: "exam", translation: "考試(n)", example: "I have a math exam tomorrow." },
+            { word: "examine", translation: "檢查、考試(v)", example: "The doctor examined the patient." },
+            { word: "example", translation: "例子(n)", example: "Could you give me an example?" },
+            { word: "excellent", translation: "優秀的(adj)", example: "She is an excellent student." },
+            { word: "except", translation: "除了...之外(prep)", example: "Everyone was there except Tom." },
+            { word: "excite", translation: "使興奮(v)", example: "The news excited everyone." },
+            { word: "excited", translation: "感到興奮的(adj)", example: "I'm so excited about the trip!" },
+            { word: "exciting", translation: "令人興奮的(adj)", example: "It was an exciting game." },
+            { word: "excuse", translation: "原諒(v) 藉口(n)", example: "Excuse me, could you help me?" },
+            { word: "exercise", translation: "運動、練習(v/n)", example: "You should exercise every day." },
+            { word: "exist", translation: "存在(v)", example: "Do you believe ghosts exist?" },
+            { word: "expect", translation: "期待、預料(v)", example: "I expect him to arrive soon." },
+            { word: "expensive", translation: "昂貴的(adj)", example: "This watch is too expensive." }
+        ];
+
+        let queue = [...wordData];
+        let learnedCount = 0;
+        let sessionTotal = wordData.length;
+        let isFlipped = false;
+        let isProcessing = false;
+
+        const cardInner = document.getElementById('card-inner');
+        const wordFront = document.getElementById('word-front');
+        const wordBack = document.getElementById('word-back');
+        const translationBack = document.getElementById('translation-back');
+        const exampleBack = document.getElementById('example-back');
+        const remainingCountText = document.getElementById('remaining-count');
+        const progressBar = document.getElementById('progress-bar');
+        const speakBtnFront = document.getElementById('speak-btn-front');
+        const speakBtnBack = document.getElementById('speak-btn-back');
+        const speakExampleBtn = document.getElementById('speak-example-btn');
+        const modal = document.getElementById('completion-modal');
+
+        function updateUI() {
+            if (queue.length === 0) {
+                modal.classList.remove('hidden');
+                return;
+            }
+            const current = queue[0];
+            wordFront.innerText = current.word;
+            wordBack.innerText = current.word;
+            translationBack.innerText = current.translation;
+            exampleBack.innerText = current.example;
+            remainingCountText.innerText = `剩餘 ${queue.length} 個`;
+            const progress = (learnedCount / sessionTotal) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function toggleFlip() {
+            if (isProcessing) return;
+            isFlipped = !isFlipped;
+            cardInner.classList.toggle('rotate-y-180', isFlipped);
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function handleSRS(type) {
+            if (queue.length === 0 || isProcessing) return;
+            isProcessing = true;
+
+            const current = queue.shift();
+            
+            // 如果當前是翻開狀態，先翻回正面
+            if (isFlipped) {
+                isFlipped = false;
+                cardInner.classList.remove('rotate-y-180');
+                
+                // 等待翻轉動畫結束 (約 400ms) 再更換內容
+                setTimeout(() => {
+                    applySRSLogic(current, type);
+                    updateUI();
+                    isProcessing = false;
+                }, 400); 
+            } else {
+                applySRSLogic(current, type);
+                updateUI();
+                isProcessing = false;
+            }
+        }
+
+        function applySRSLogic(current, type) {
+            switch(type) {
+                case 'AGAIN': 
+                    // 放在很前面 (第 3 個位置)
+                    queue.splice(Math.min(3, queue.length), 0, current); 
+                    break;
+                case 'HARD': 
+                    // 放在隊列中間
+                    queue.splice(Math.floor(queue.length / 2), 0, current); 
+                    break;
+                case 'GOOD': 
+                    // 放到最後面再看一次
+                    queue.push(current); 
+                    break;
+                case 'EASY': 
+                    // 直接移出隊列並計算進度
+                    learnedCount++; 
+                    break;
+            }
+        }
+
+        function resetSession() {
+            queue = [...wordData];
+            learnedCount = 0;
+            isFlipped = false;
+            isProcessing = false;
+            modal.classList.add('hidden');
+            cardInner.classList.remove('rotate-y-180');
+            updateUI();
+        }
+
+        cardInner.addEventListener('click', toggleFlip);
+        speakBtnFront.addEventListener('click', (e) => { e.stopPropagation(); speak(queue[0].word); });
+        speakBtnBack.addEventListener('click', (e) => { e.stopPropagation(); speak(queue[0].word); });
+        speakExampleBtn.addEventListener('click', (e) => { e.stopPropagation(); speak(queue[0].example); });
+
+        updateUI();
+    </script>
+</body>
+</html>
