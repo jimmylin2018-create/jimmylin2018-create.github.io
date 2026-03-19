@@ -10,7 +10,8 @@
         .preserve-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
-        .card-container { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 優化翻轉動畫速度與曲線 */
+        .card-container { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans">
@@ -34,7 +35,7 @@
         <!-- Flashcard Area -->
         <div id="card-area" class="relative w-full max-w-md perspective-1000 h-[480px]">
             <div id="card-inner" class="card-container relative w-full h-full preserve-3d cursor-pointer shadow-xl rounded-3xl">
-                <!-- Front -->
+                <!-- Front (單字面) -->
                 <div class="absolute inset-0 backface-hidden bg-white rounded-3xl flex flex-col items-center justify-center p-8 border-2 border-slate-100">
                     <span class="text-slate-400 text-xs font-bold tracking-widest uppercase mb-4">Word</span>
                     <h2 id="word-front" class="text-5xl font-extrabold text-slate-800 text-center mb-6 break-all">-</h2>
@@ -44,7 +45,7 @@
                     <p class="absolute bottom-10 text-slate-300 text-sm font-medium animate-pulse">點擊卡片查看解釋</p>
                 </div>
 
-                <!-- Back -->
+                <!-- Back (解釋面) -->
                 <div class="absolute inset-0 backface-hidden bg-white rounded-3xl flex flex-col p-8 border-2 border-indigo-100 rotate-y-180 overflow-hidden">
                     <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
                         <div>
@@ -66,6 +67,7 @@
                         </div>
                     </div>
 
+                    <!-- SRS 控制按鈕 -->
                     <div class="mt-6 pt-6 border-t border-slate-100 grid grid-cols-4 gap-2">
                         <button onclick="handleSRS('AGAIN')" class="flex flex-col items-center gap-1 group">
                             <div class="w-full bg-red-50 text-red-500 py-3 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
@@ -106,6 +108,7 @@
     </div>
 
     <script>
+        // 資料集 (cold ~ eighteen)
         const wordData = [
             { word: "cold", translation: "寒冷的(adj) 感冒(n)", example: "I have a bad cold and a fever." },
             { word: "collect", translation: "收集、採集(v)", example: "My hobby is to collect old coins." },
@@ -138,7 +141,7 @@
             { word: "conversation", translation: "對話(n)", example: "I had a long conversation with her." },
             { word: "cook", translation: "廚師(n) 烹調(v)", example: "My mother is a great cook." },
             { word: "cookie", translation: "小餅乾(n)", example: "Would you like a chocolate cookie?" },
-            { word: "cool", translation: "涼爽的、酷的(adj)", example: "The weather is cool in autumn." },
+            { word: "cool", translation: "涼爽的(adj) 酷的(adj)", example: "The weather is cool in autumn." },
             { word: "copy", translation: "副本、影本(n) 複印(v)", example: "Please make a copy of this report." },
             { word: "corn", translation: "玉米(n)", example: "We had boiled corn for dinner." },
             { word: "corner", translation: "角落、轉角(n)", example: "The store is on the street corner." },
@@ -183,7 +186,7 @@
             { word: "cut", translation: "切、割(v/n)", example: "He cut his finger with a knife." },
             { word: "cute", translation: "可愛的(adj)", example: "What a cute little puppy!" },
             { word: "cycle", translation: "週期、循環(n) 騎自行車(v)", example: "The water cycle is important for life." },
-            { word: "daily", translation: "每日的(adj) 每日地(adv)", example: "I read the daily newspaper." },
+            { word: "daily", translation: "每日的(adj/adv)", example: "I read the daily newspaper." },
             { word: "dairy", translation: "乳品店、乳製品(n)", example: "Milk and cheese are dairy products." },
             { word: "damage", translation: "損害(v/n)", example: "The storm caused damage to the roof." },
             { word: "dance", translation: "跳舞(v/n)", example: "Would you like to dance with me?" },
@@ -254,7 +257,7 @@
             { word: "doctor", translation: "醫生、博士(n)", example: "The doctor told me to stay in bed." },
             { word: "dog", translation: "狗(n)", example: "I take my dog for a walk every day." },
             { word: "doll", translation: "玩偶、洋娃娃(n)", example: "She likes playing with her dolls." },
-            { word: "dollar", translation: "元(貨幣)(n)", example: "The book costs ten dollars." },
+            { word: "dollar", translation: "元(貨幣單位)(n)", example: "The book costs ten dollars." },
             { word: "dolphin", translation: "海豚(n)", example: "Dolphins are very intelligent animals." },
             { word: "donkey", translation: "驢子(n)", example: "The donkey is carrying heavy bags." },
             { word: "door", translation: "門(n)", example: "Please open the door." },
@@ -306,6 +309,7 @@
         let learnedCount = 0;
         let sessionTotal = wordData.length;
         let isFlipped = false;
+        let isProcessing = false; // 防止重複點擊
 
         const cardInner = document.getElementById('card-inner');
         const wordFront = document.getElementById('word-front');
@@ -335,6 +339,7 @@
         }
 
         function toggleFlip() {
+            if (isProcessing) return;
             isFlipped = !isFlipped;
             cardInner.classList.toggle('rotate-y-180', isFlipped);
         }
@@ -349,35 +354,74 @@
             }
         }
 
+        /**
+         * 處理 SRS 按鈕點擊
+         * 修改邏輯：先翻回正面，動畫結束後才更新資料
+         */
         function handleSRS(type) {
-            if (queue.length === 0) return;
+            if (queue.length === 0 || isProcessing) return;
+            isProcessing = true;
+
             const current = queue.shift();
-            if (isFlipped) toggleFlip();
-            setTimeout(() => {
-                switch(type) {
-                    case 'AGAIN': queue.splice(Math.min(3, queue.length), 0, current); break;
-                    case 'HARD': queue.splice(Math.floor(queue.length / 2), 0, current); break;
-                    case 'GOOD': queue.push(current); break;
-                    case 'EASY': learnedCount++; break;
-                }
+            
+            // 如果當前是翻開狀態，先翻回正面
+            if (isFlipped) {
+                isFlipped = false;
+                cardInner.classList.remove('rotate-y-180');
+                
+                // 等待翻轉動畫結束 (約 400ms) 再更換內容
+                setTimeout(() => {
+                    applySRSLogic(current, type);
+                    updateUI();
+                    isProcessing = false;
+                }, 400); 
+            } else {
+                // 如果已經在正面，直接處理
+                applySRSLogic(current, type);
                 updateUI();
-            }, 150);
+                isProcessing = false;
+            }
+        }
+
+        // 核心 SRS 排序邏輯
+        function applySRSLogic(current, type) {
+            switch(type) {
+                case 'AGAIN': 
+                    // 插回佇列前方 (大約第 3-4 個)
+                    queue.splice(Math.min(3, queue.length), 0, current); 
+                    break;
+                case 'HARD': 
+                    // 插回佇列中間
+                    queue.splice(Math.floor(queue.length / 2), 0, current); 
+                    break;
+                case 'GOOD': 
+                    // 插回佇列最後方
+                    queue.push(current); 
+                    break;
+                case 'EASY': 
+                    // 標記為已學會，不再出現
+                    learnedCount++; 
+                    break;
+            }
         }
 
         function resetSession() {
             queue = [...wordData];
             learnedCount = 0;
             isFlipped = false;
+            isProcessing = false;
             modal.classList.add('hidden');
             cardInner.classList.remove('rotate-y-180');
             updateUI();
         }
 
+        // 綁定事件
         cardInner.addEventListener('click', toggleFlip);
         speakBtnFront.addEventListener('click', (e) => { e.stopPropagation(); speak(queue[0].word); });
         speakBtnBack.addEventListener('click', (e) => { e.stopPropagation(); speak(queue[0].word); });
         speakExampleBtn.addEventListener('click', (e) => { e.stopPropagation(); speak(queue[0].example); });
 
+        // 初始化
         updateUI();
     </script>
 </body>
